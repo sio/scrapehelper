@@ -65,6 +65,9 @@ class BaseDataFetcher(metaclass=FetcherMeta):
             return response
 
 
+    # TODO: add POST method
+
+
     def parse_html(self, url=None, response=None, *a, **ka):
         if lxml is None:
             raise ImportError('No module named \'lxml\'')
