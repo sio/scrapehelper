@@ -63,10 +63,13 @@ class BaseDataFetcher(metaclass=FetcherMeta):
             return response
 
 
-    def parse_html(self, url, *a, **ka):
+    def parse_html(self, url=None, response=None, *a, **ka):
         if lxml is None:
             raise ImportError('No module named \'lxml\'')
-        response = self.get(url, *a, **ka)
+        if url:
+            response = self.get(url, *a, **ka)
+        elif response is None:
+            raise ValueError('either url or response must be provided')
         html = lxml.html.fromstring(response.text)
         html.make_links_absolute(response.url)
         return html
