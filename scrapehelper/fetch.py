@@ -54,12 +54,14 @@ class BaseDataFetcher(metaclass=FetcherMeta):
             raise DataFetcherError(exc.__class__.__name__)
 
 
-    def _get(self, url, *a, **ka):
+    def _get(self, url, force_encoding=None, *a, **ka):
         with self.rate_limit:
             response = self._requests.get(url, *a, **ka)
             response.raise_for_status()  # fail early
             if response.encoding is None:
                 response.encoding = self.ENCODING_FALLBACK
+            if force_encoding:
+                response.encoding = force_encoding
             return response
 
 
