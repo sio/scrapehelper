@@ -67,7 +67,7 @@ class BaseDataFetcher(metaclass=FetcherMeta):
         if lxml is None:
             raise ImportError('No module named \'lxml\'')
         response = self.get(url, *a, **ka)
-        html = lxml.html.fromstring(response.content)
+        html = lxml.html.fromstring(response.text)
         html.make_links_absolute(response.url)
         return html
 
