@@ -23,6 +23,7 @@ class RateLimiter:
         - Manually registering new_call() before sending an API request
     '''
     # TODO: write tests for RateLimiter
+    # TODO: replace call_log with deque (?)
 
     REFRESH_INTERVAL = 0.5  # seconds (minimum sleep interval)
 
@@ -102,6 +103,30 @@ class RateLimiter:
                 self.next_cleanup = self.call_log[0] + self.interval
             except IndexError:  # pop from empty list
                 self.next_cleanup = 0
+
+
+    @property
+    def remaining(self):
+        '''How many calls you can make before hitting rate limit'''
+        with self.lock:
+            return self.call_limit - len(self.call_log)
+
+
+    @remaining.setter
+    def remaining(self, value):
+        '''
+        Set remaining calls number if the rate limit has been partially used
+        before we started keeping track
+        '''
+        with self.lock:
+            placeholder = None
+            while self.call_limit - len(self.call_log) > value:
+                if not placeholder:
+                    if len(self.call_log):
+                        placeholder = self.call_log[0]
+                    else:
+                        placeholder = self.clock()
+                self.call_log.insert(0, placeholder)
 
 
     def __enter__(self):
