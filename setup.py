@@ -14,8 +14,10 @@ setup(
     include_package_data=True,
     install_requires=[
         'requests',
-        'lxml',
     ],
+    extras_require={
+        'lxml': ['lxml'],
+    },
     python_requires='>=3.3',
     zip_safe=True,
 )
