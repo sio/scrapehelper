@@ -65,7 +65,14 @@ class BaseDataFetcher(metaclass=FetcherMeta):
             return response
 
 
-    # TODO: add POST method
+    def post(self, url, *a, **ka):
+        try:
+            with self.rate_limit:
+                response = self._requests.post(url, *a, **ka)
+                response.raise_for_status()
+                return response
+        except (HTTPError, ConnectionError) as exc:
+            raise DataFetcherError(exc.__class__.__name__)
 
 
     def parse_html(self, url=None, response=None, *a, **ka):
