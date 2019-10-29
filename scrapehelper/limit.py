@@ -51,6 +51,15 @@ class RateLimiter:
         self.next_cleanup = 0
 
 
+    def __repr__(self):
+        return '{cls}(calls={calls}, interval={interval}, wait={wait})'.format(
+            cls=self.__class__.__name__,
+            calls=self.call_limit,
+            interval=self.interval,
+            wait=self.wait,
+        )
+
+
     def new_call(self):
         '''
         Register new API call
