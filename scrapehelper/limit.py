@@ -106,7 +106,7 @@ class RateLimiter:
         if self.call_log and not self.next_cleanup:
             self.next_cleanup = self.call_log[0] + self.interval
         while self.next_cleanup\
-        and self.clock() > self.next_cleanup:
+        and self.clock() >= self.next_cleanup:
             try:
                 self.call_log.pop(0)
                 self.next_cleanup = self.call_log[0] + self.interval
