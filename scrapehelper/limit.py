@@ -22,7 +22,6 @@ class RateLimiter:
         - Through context manager interface
         - Manually registering new_call() before sending an API request
     '''
-    # TODO: write tests for RateLimiter
     # TODO: replace call_log with deque (?)
 
     clock = time.monotonic  # Must count in seconds, time diff used in sleep() delay
