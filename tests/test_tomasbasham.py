@@ -29,33 +29,13 @@ These unit tests were adapted from https://github.com/tomasbasham/ratelimit
 from time import sleep
 from unittest import TestCase
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from scrapehelper.limit import RateLimiter, RateLimitReachedError
 
-
-class Clock(object):
-    def __init__(self):
-        self.reset()
-
-    def __call__(self):
-        return self.now
-
-    def __repr__(self):
-        return '<Fake clock: {}>'.format(self.now)
-
-    def reset(self):
-        self.now = 0
-
-    def increment(self, num=1):
-        self.now += num
+from scrapehelper.limit import RateLimitReachedError
+from tests.common import limits
 
 
 CLOCK_STEP = 5  # The longest test will take this much seconds
-clock = Clock()
-
-
-class limits(RateLimiter):
-    '''RateLimiter with mocked clock'''
-    clock = clock
+clock = limits.clock
 
 
 class TestDecorator(TestCase):
