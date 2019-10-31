@@ -9,3 +9,5 @@ venv.bat
 
 # Profiler reports
 *.dat
+
+/Makefile.venv

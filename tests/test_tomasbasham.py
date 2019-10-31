@@ -26,7 +26,11 @@ These unit tests were adapted from https://github.com/tomasbasham/ratelimit
 # SOFTWARE.
 
 
-import unittest
+from time import sleep
+from unittest import TestCase
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from scrapehelper.limit import RateLimiter, RateLimitReachedError
+
 
 class Clock(object):
     def __init__(self):
@@ -41,32 +45,37 @@ class Clock(object):
     def increment(self, num=1):
         self.now += num
 
+
+CLOCK_STEP = 5  # The longest test will take this much seconds
 clock = Clock()
 
+limit_nowait = RateLimiter(calls=1, interval=CLOCK_STEP, wait=False)
+limit_nowait.clock = clock
 
-from ratelimit import limits, RateLimitException
-from tests import unittest, clock
+limit_wait = RateLimiter(calls=1, interval=CLOCK_STEP)
+limit_wait.clock = clock
 
-class TestDecorator(unittest.TestCase):
 
-    @limits(calls=1, period=10, clock=clock)
+class TestDecorator(TestCase):
+
+    @limit_nowait
     def increment(self):
         '''
-        Increment the counter at most once every 10 seconds.
+        Increment the counter at most once every CLOCK_STEP seconds.
         '''
         self.count += 1
 
-    @limits(calls=1, period=10, clock=clock, raise_on_limit=False)
+    @limit_wait
     def increment_no_exception(self):
         '''
-        Increment the counter at most once every 10 seconds, but w/o rasing an
+        Increment the counter at most once every CLOCK_STEP seconds, but w/o rasing an
         exception when reaching limit.
         '''
         self.count += 1
 
     def setUp(self):
         self.count = 0
-        clock.increment(10)
+        clock.increment(CLOCK_STEP)
 
     def test_increment(self):
         self.increment()
@@ -74,17 +83,31 @@ class TestDecorator(unittest.TestCase):
 
     def test_exception(self):
         self.increment()
-        self.assertRaises(RateLimitException, self.increment)
+        self.assertRaises(RateLimitReachedError, self.increment)
 
     def test_reset(self):
         self.increment()
-        clock.increment(10)
+        for _ in range(CLOCK_STEP):
+            with self.subTest(_=_, clock=clock.now):
+                self.assertRaises(RateLimitReachedError, self.increment)
+            clock.increment()
 
         self.increment()
         self.assertEqual(self.count, 2)
 
     def test_no_exception(self):
-        self.increment_no_exception()
-        self.increment_no_exception()
+        threads = ThreadPoolExecutor()
+        futures = set()
+        for _ in range(2):
+            futures.add(threads.submit(self.increment_no_exception))
 
-        self.assertEqual(self.count, 1)
+        def done_count():
+            return len([f for f in futures if f.done()])
+
+        for _ in range(CLOCK_STEP):
+            with self.subTest(clock=clock.now, _=_):
+                self.assertEqual(done_count(), 1)  # Second job is waiting for interval to pass
+            clock.increment()
+        for future in as_completed(futures):
+            future.result()  # Wait for all threads and check that no exceptions are raised
+        self.assertEqual(done_count(), 2)
