@@ -39,6 +39,9 @@ class Clock(object):
     def __call__(self):
         return self.now
 
+    def __repr__(self):
+        return '<Fake clock: {}>'.format(self.now)
+
     def reset(self):
         self.now = 0
 
@@ -49,26 +52,25 @@ class Clock(object):
 CLOCK_STEP = 5  # The longest test will take this much seconds
 clock = Clock()
 
-limit_nowait = RateLimiter(calls=1, interval=CLOCK_STEP, wait=False)
-limit_nowait.clock = clock
 
-limit_wait = RateLimiter(calls=1, interval=CLOCK_STEP)
-limit_wait.clock = clock
+class limits(RateLimiter):
+    '''RateLimiter with mocked clock'''
+    clock = clock
 
 
 class TestDecorator(TestCase):
 
-    @limit_nowait
-    def increment(self):
+    @limits(calls=1, interval=CLOCK_STEP, wait=False)
+    def api_hit_nowait(self):
         '''
         Increment the counter at most once every CLOCK_STEP seconds.
         '''
         self.count += 1
 
-    @limit_wait
-    def increment_no_exception(self):
+    @limits(calls=1, interval=CLOCK_STEP)
+    def api_hit_wait(self):
         '''
-        Increment the counter at most once every CLOCK_STEP seconds, but w/o rasing an
+        Increment the counter at most once every CLOCK_STEP seconds, but w/o raising an
         exception when reaching limit.
         '''
         self.count += 1
@@ -78,28 +80,28 @@ class TestDecorator(TestCase):
         clock.increment(CLOCK_STEP)
 
     def test_increment(self):
-        self.increment()
+        self.api_hit_nowait()
         self.assertEqual(self.count, 1)
 
     def test_exception(self):
-        self.increment()
-        self.assertRaises(RateLimitReachedError, self.increment)
+        self.api_hit_nowait()
+        self.assertRaises(RateLimitReachedError, self.api_hit_nowait)
 
     def test_reset(self):
-        self.increment()
+        self.api_hit_nowait()
         for _ in range(CLOCK_STEP):
             with self.subTest(_=_, clock=clock.now):
-                self.assertRaises(RateLimitReachedError, self.increment)
+                self.assertRaises(RateLimitReachedError, self.api_hit_nowait)
             clock.increment()
 
-        self.increment()
+        self.api_hit_nowait()
         self.assertEqual(self.count, 2)
 
     def test_no_exception(self):
         threads = ThreadPoolExecutor()
         futures = set()
         for _ in range(2):
-            futures.add(threads.submit(self.increment_no_exception))
+            futures.add(threads.submit(self.api_hit_wait))
 
         def done_count():
             return len([f for f in futures if f.done()])
