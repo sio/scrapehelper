@@ -25,6 +25,7 @@ class RateLimiter:
     # TODO: write tests for RateLimiter
     # TODO: replace call_log with deque (?)
 
+    clock = time.monotonic  # Must count in seconds, time diff used in sleep() delay
     REFRESH_INTERVAL = 0.5  # seconds (minimum sleep interval)
 
 
@@ -46,7 +47,6 @@ class RateLimiter:
         self.call_log = []
         self.interval = interval
         self.wait = wait
-        self.clock = time.monotonic
         self.lock = threading.RLock()
         self.next_cleanup = 0
 
