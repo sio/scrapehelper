@@ -4,6 +4,7 @@ Rate limit access to sensitive resources
 
 import threading
 import time
+from collections import deque
 from functools import wraps
 
 
@@ -22,7 +23,6 @@ class RateLimiter:
         - Through context manager interface
         - Manually registering new_call() before sending an API request
     '''
-    # TODO: replace call_log with deque (?)
 
     clock = time.monotonic  # Must count in seconds, time diff used in sleep() delay
     REFRESH_INTERVAL = 0.5  # seconds (minimum sleep interval)
@@ -43,7 +43,7 @@ class RateLimiter:
             RateLimitReachedError otherwise.
         '''
         self.call_limit = calls
-        self.call_log = []
+        self.call_log = deque()
         self.interval = interval
         self.wait = wait
         self.lock = threading.RLock()
@@ -107,8 +107,13 @@ class RateLimiter:
         while self.next_cleanup\
         and self.clock() >= self.next_cleanup:
             try:
-                self.call_log.pop(0)
+                self.call_log.popleft()
                 self.next_cleanup = self.call_log[0] + self.interval
+                # The section above should not be replaced with bounded deque
+                # (with maxlen argument):
+                # - It would not take care of purging duplicate timestamps from
+                #   call_log in one pass
+                # - Cleanup would happen implicitly and would be hard to understand
             except IndexError:  # pop from empty list
                 self.next_cleanup = 0
 
@@ -134,7 +139,7 @@ class RateLimiter:
                         placeholder = self.call_log[0]
                     else:
                         placeholder = self.clock()
-                self.call_log.insert(0, placeholder)
+                self.call_log.appendleft(placeholder)
 
 
     def __enter__(self):
