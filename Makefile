@@ -12,7 +12,12 @@ include Makefile.venv
 Makefile.venv:
 	curl \
 		-o Makefile.fetched \
-		-L "https://github.com/sio/Makefile.venv/raw/v2019.10.04/Makefile.venv"
-	echo "7a0a5a7a25ab959c6686b839cd45eb522f1a0662aa6096be5d56106c940aee95 *Makefile.fetched" \
+		-L "https://github.com/sio/Makefile.venv/raw/v2019.11.06/Makefile.venv"
+	echo "93744514780c15f916dd0e26e5827afae23b92cc62704bb2dd8b9e2bb0370a96 *Makefile.fetched" \
 		| sha256sum --check - \
 		&& mv Makefile.fetched Makefile.venv
+
+
+.PHONY: test-codestyle
+test-codestyle: $(VENV)/pyflakes
+	$(VENV)/pyflakes scrapehelper tests
