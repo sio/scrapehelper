@@ -26,7 +26,6 @@ These unit tests were adapted from https://github.com/tomasbasham/ratelimit
 # SOFTWARE.
 
 
-from time import sleep
 from unittest import TestCase
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
