@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='scrapehelper',
-    version='0.0.1-git',
+    version='1.0.0',
     description='Helpful library for scraping information from web',
     url='https://github.com/sio/scrapehelper',
     author='Vitaly Potyarkin',
